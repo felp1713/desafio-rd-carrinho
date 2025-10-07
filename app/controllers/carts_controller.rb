@@ -1,4 +1,6 @@
 class CartsController < ApplicationController
+  rescue_from ActiveRecord::RecordNotFound, with: :product_not_found
+
   before_action :set_cart
 
   def show
@@ -9,6 +11,8 @@ class CartsController < ApplicationController
     product = Product.find(add_item_params[:product_id])
     quantity = add_item_params[:quantity].to_i
     cart_item = @cart.cart_items.find_by(product_id: product.id)
+
+    return render json: { error: 'Quantity must be positive' }, status: :unprocessable_entity if quantity <= 0
 
     if cart_item
       cart_item.increment!(:quantity, quantity)
@@ -65,5 +69,9 @@ class CartsController < ApplicationController
       end,
       total_price: cart.total_price.to_s
     }
+  end
+
+  def product_not_found
+    render json: { error: 'Product not found' }, status: :not_found
   end
 end
